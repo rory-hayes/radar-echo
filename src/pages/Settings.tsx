@@ -9,19 +9,27 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Trash2, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSubscription } from '@/hooks/use-subscription';
 import { supabase } from '@/integrations/supabase/client';
 import { STRIPE_TIERS } from '@/lib/stripe-config';
+import { useOrganization } from '@/hooks/use-organization';
 
 const Settings = () => {
-  const [orgName, setOrgName] = useState('Acme Corp');
+  const { organization, isLoading: orgLoading } = useOrganization();
+  const [orgName, setOrgName] = useState('');
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [slackNotifs, setSlackNotifs] = useState(false);
   const [autoSync, setAutoSync] = useState(true);
   const [retention, setRetention] = useState([90]);
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   const { status, refreshSubscription } = useSubscription();
+
+  useEffect(() => {
+    if (organization) {
+      setOrgName(organization.name || '');
+    }
+  }, [organization]);
 
   const handleSave = () => {
     toast({ title: 'Settings saved successfully' });
@@ -180,23 +188,29 @@ const Settings = () => {
           )}
         </Card>
 
-        <Card className="card-elevated bg-white p-6">
-          <h2 className="text-xl font-bold mb-4 text-primary">Organization</h2>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="org-name" className="text-primary">Organization Name</Label>
-              <Input
-                id="org-name"
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                className="mt-2 bg-white border-border"
-              />
+        {organization && (
+          <Card className="card-elevated bg-white p-6">
+            <h2 className="text-xl font-bold mb-4 text-primary">Organization</h2>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="org-name" className="text-primary">Organization Name</Label>
+                <Input
+                  id="org-name"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  className="mt-2 bg-white border-border"
+                />
+                <p className="text-xs text-subtext mt-1">Organization slug: {organization.slug}</p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         <Card className="card-elevated bg-white p-6">
           <h2 className="text-xl font-bold mb-4 text-primary">Notifications</h2>
+          {!organization && (
+            <p className="text-sm text-subtext mb-4">Create an organization to enable notifications</p>
+          )}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -207,6 +221,7 @@ const Settings = () => {
                 id="email-notifs"
                 checked={emailNotifs}
                 onCheckedChange={setEmailNotifs}
+                disabled={!organization}
               />
             </div>
             <Separator />
@@ -219,6 +234,7 @@ const Settings = () => {
                 id="slack-notifs"
                 checked={slackNotifs}
                 onCheckedChange={setSlackNotifs}
+                disabled={!organization}
               />
             </div>
           </div>

@@ -33,6 +33,32 @@ const Onboarding = () => {
         return;
       }
 
+      // Check for Stripe success/cancel in URL
+      const params = new URLSearchParams(window.location.search);
+      const isSuccess = params.get('success');
+      const isCanceled = params.get('canceled');
+
+      if (isSuccess === 'true') {
+        // Payment successful, refresh subscription and redirect
+        toast({
+          title: 'Subscription activated!',
+          description: 'Welcome to Echo! Your subscription is now active.',
+        });
+        // Wait a moment for Stripe to process, then navigate
+        setTimeout(() => navigate('/dashboard'), 1500);
+        return;
+      }
+
+      if (isCanceled === 'true') {
+        toast({
+          title: 'Payment canceled',
+          description: 'You can choose a plan anytime from Settings.',
+          variant: 'destructive',
+        });
+        setStep('plan-selection');
+        return;
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('onboarding_completed')
@@ -171,14 +197,20 @@ const Onboarding = () => {
 
   const handlePlanSelection = async (tier: string) => {
     setIsLoading(true);
+    setSelectedTier(tier);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
       const tierConfig = STRIPE_TIERS[tier as keyof typeof STRIPE_TIERS];
+      const origin = window.location.origin;
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: tierConfig.price_id },
+        body: { 
+          priceId: tierConfig.price_id,
+          successUrl: `${origin}/onboarding?success=true`,
+          cancelUrl: `${origin}/onboarding?canceled=true`,
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -187,6 +219,7 @@ const Onboarding = () => {
       if (error) throw error;
 
       if (data.url) {
+        // Don't use window.location to allow back button
         window.location.href = data.url;
       }
     } catch (error: any) {
@@ -195,6 +228,7 @@ const Onboarding = () => {
         description: error.message,
         variant: 'destructive',
       });
+      setSelectedTier(null);
     } finally {
       setIsLoading(false);
     }

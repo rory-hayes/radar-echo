@@ -102,6 +102,7 @@ const Frameworks = () => {
                     size="sm"
                     className="flex-1 border-border text-primary hover:bg-muted"
                     onClick={() => setActiveMutation.mutate(framework.id)}
+                    title="Make this framework active for all new calls"
                   >
                     Set Active
                   </Button>
@@ -111,6 +112,7 @@ const Frameworks = () => {
                   size="sm"
                   className="border-border text-primary hover:bg-muted"
                   onClick={() => handleDuplicate(framework)}
+                  title="Create a copy of this framework"
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
@@ -119,6 +121,7 @@ const Frameworks = () => {
                   size="sm"
                   className="border-border text-primary hover:bg-muted"
                   onClick={() => handleExport(framework)}
+                  title="Download this framework as JSON"
                 >
                   <Download className="w-4 h-4" />
                 </Button>

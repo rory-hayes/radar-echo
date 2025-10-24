@@ -109,6 +109,7 @@ const Integrations = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <h1 className="text-4xl font-bold mb-2 text-primary">Integrations</h1>
         <p className="text-subtext text-lg">Connect Echo with your favorite tools and platforms</p>
+        <p className="text-xs text-subtext mt-2">Note: Connected integrations are demo connections. Configure them to use real credentials.</p>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -154,6 +155,7 @@ const Integrations = () => {
                       size="sm"
                       className="flex-1 border-border text-primary hover:bg-muted"
                       onClick={() => handleConfigure(integration)}
+                      title="Manage connection settings and credentials"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Configure
@@ -163,6 +165,7 @@ const Integrations = () => {
                       size="sm"
                       className="border-destructive text-destructive hover:bg-destructive/10"
                       onClick={() => handleDisconnect(integration.id)}
+                      title="Remove this integration"
                     >
                       Disconnect
                     </Button>
@@ -173,6 +176,7 @@ const Integrations = () => {
                     size="sm"
                     disabled
                     className="flex-1 border-border text-subtext"
+                    title="This integration is not yet available"
                   >
                     Coming Soon
                   </Button>
@@ -181,6 +185,7 @@ const Integrations = () => {
                     className="btn-accent flex-1"
                     size="sm"
                     onClick={() => handleConnect(integration.id)}
+                    title="Connect this integration to your Echo account"
                   >
                     Connect
                   </Button>

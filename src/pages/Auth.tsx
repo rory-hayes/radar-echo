@@ -229,9 +229,24 @@ const Auth = () => {
                     value={signupForm.password}
                     onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                     required
-                    className="bg-white"
+                    className={`bg-white ${signupForm.password && signupForm.password.length > 0 && signupForm.password.length < 8 ? 'border-destructive' : ''}`}
                   />
-                  <p className="text-xs text-subtext">At least 8 characters</p>
+                  {signupForm.password && signupForm.password.length > 0 && (
+                    <div className="space-y-1">
+                      <p className={`text-xs ${signupForm.password.length >= 8 ? 'text-accent' : 'text-destructive'}`}>
+                        {signupForm.password.length >= 8 ? '✓' : '✗'} At least 8 characters
+                      </p>
+                      <p className={`text-xs ${/[A-Z]/.test(signupForm.password) ? 'text-accent' : 'text-subtext'}`}>
+                        {/[A-Z]/.test(signupForm.password) ? '✓' : '○'} One uppercase letter
+                      </p>
+                      <p className={`text-xs ${/[0-9]/.test(signupForm.password) ? 'text-accent' : 'text-subtext'}`}>
+                        {/[0-9]/.test(signupForm.password) ? '✓' : '○'} One number
+                      </p>
+                    </div>
+                  )}
+                  {!signupForm.password && (
+                    <p className="text-xs text-subtext">Must be at least 8 characters with uppercase and number</p>
+                  )}
                 </div>
                 <Button type="submit" className="btn-accent w-full" disabled={isLoading}>
                   {isLoading ? (

@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { UserPlus, Mail, MoreVertical, Crown, Shield, Eye } from 'lucide-react';
+import { UserPlus, Mail, MoreVertical, Crown, Shield, Eye, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
@@ -66,66 +66,71 @@ const Team = () => {
   }, []);
 
   const loadTeamData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
-      return;
-    }
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
 
-    // Get user's organization
-    const { data: membership } = await supabase
-      .from('organization_members')
-      .select('organization_id')
-      .eq('user_id', session.user.id)
-      .single();
+      // Get user's organization
+      const { data: membership } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-    if (!membership) {
-      toast({
-        title: 'No organization found',
-        description: 'You need to be part of an organization to manage team members.',
-        variant: 'destructive',
-      });
-      navigate('/dashboard');
-      return;
-    }
+      if (!membership) {
+        toast({
+          title: 'No organization found',
+          description: 'You need to create an organization first. Go to onboarding to set one up.',
+          variant: 'destructive',
+        });
+        navigate('/onboarding');
+        return;
+      }
 
-    setCurrentOrgId(membership.organization_id);
+      setCurrentOrgId(membership.organization_id);
 
-    // Load members with profile data
-    const { data: membersData, error: membersError } = await supabase
-      .from('organization_members')
-      .select('id, user_id, role, joined_at')
-      .eq('organization_id', membership.organization_id);
+      // Load members with profile data
+      const { data: membersData, error: membersError } = await supabase
+        .from('organization_members')
+        .select('id, user_id, role, joined_at')
+        .eq('organization_id', membership.organization_id);
 
-    if (membersData) {
-      // Fetch profiles for each member
-      const membersWithProfiles = await Promise.all(
-        membersData.map(async (member) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', member.user_id)
-            .single();
+      if (membersData) {
+        // Fetch profiles for each member
+        const membersWithProfiles = await Promise.all(
+          membersData.map(async (member) => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', member.user_id)
+              .single();
 
-          return {
-            ...member,
-            profiles: profile || { full_name: null, email: '' },
-          };
-        })
-      );
+            return {
+              ...member,
+              profiles: profile || { full_name: null, email: '' },
+            };
+          })
+        );
 
-      setMembers(membersWithProfiles as Member[]);
-    }
+        setMembers(membersWithProfiles as Member[]);
+      }
 
-    // Load pending invitations
-    const { data: invitationsData } = await supabase
-      .from('invitations')
-      .select('*')
-      .eq('organization_id', membership.organization_id)
-      .eq('status', 'pending');
+      // Load pending invitations
+      const { data: invitationsData } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('organization_id', membership.organization_id)
+        .eq('status', 'pending');
 
-    if (invitationsData) {
-      setInvitations(invitationsData);
+      if (invitationsData) {
+        setInvitations(invitationsData);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -222,76 +227,90 @@ const Team = () => {
             <h1 className="text-4xl font-bold mb-2 text-primary">Team Management</h1>
             <p className="text-subtext text-lg">Manage your organization members and invitations</p>
           </div>
-          <Button className="btn-accent" onClick={() => setInviteDialogOpen(true)}>
+          <Button className="btn-accent" onClick={() => setInviteDialogOpen(true)} disabled={!currentOrgId}>
             <UserPlus className="w-4 h-4 mr-2" />
             Invite Member
           </Button>
         </div>
       </motion.div>
 
-      {/* Members List */}
-      <Card className="card-elevated bg-white p-6 mb-6">
-        <h2 className="text-2xl font-bold text-primary mb-6">Team Members</h2>
-        <div className="space-y-4">
-          {members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback className="bg-accent text-white">
-                    {member.profiles.full_name?.[0] || member.profiles.email[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold text-primary">{member.profiles.full_name || 'No name'}</p>
-                    {getRoleIcon(member.role)}
-                  </div>
-                  <p className="text-sm text-subtext">{member.profiles.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {getRoleBadge(member.role)}
-                <Button variant="ghost" size="icon" className="text-subtext hover:text-primary">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Pending Invitations */}
-      {invitations.length > 0 && (
-        <Card className="card-elevated bg-white p-6">
-          <h2 className="text-2xl font-bold text-primary mb-6">Pending Invitations</h2>
-          <div className="space-y-4">
-            {invitations.map((invitation) => (
-              <div
-                key={invitation.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-border"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-subtext" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-primary">{invitation.email}</p>
-                    <p className="text-sm text-subtext">Invited {new Date(invitation.created_at).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {getRoleBadge(invitation.role)}
-                  <Badge variant="outline" className="text-warning border-warning">
-                    Pending
-                  </Badge>
-                </div>
-              </div>
-            ))}
+      {isLoading ? (
+        <Card className="card-elevated bg-white p-12">
+          <div className="flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
           </div>
         </Card>
+      ) : (
+        <>
+          {/* Members List */}
+          <Card className="card-elevated bg-white p-6 mb-6">
+            <h2 className="text-2xl font-bold text-primary mb-6">Team Members</h2>
+            {members.length === 0 ? (
+              <p className="text-subtext text-center py-8">No team members yet. Invite someone to get started!</p>
+            ) : (
+              <div className="space-y-4">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className="bg-accent text-white">
+                          {member.profiles.full_name?.[0] || member.profiles.email[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-primary">{member.profiles.full_name || 'No name'}</p>
+                          {getRoleIcon(member.role)}
+                        </div>
+                        <p className="text-sm text-subtext">{member.profiles.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {getRoleBadge(member.role)}
+                      <Button variant="ghost" size="icon" className="text-subtext hover:text-primary">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Pending Invitations */}
+          {invitations.length > 0 && (
+            <Card className="card-elevated bg-white p-6">
+              <h2 className="text-2xl font-bold text-primary mb-6">Pending Invitations</h2>
+              <div className="space-y-4">
+                {invitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-border"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-subtext" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-primary">{invitation.email}</p>
+                        <p className="text-sm text-subtext">Invited {new Date(invitation.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {getRoleBadge(invitation.role)}
+                      <Badge variant="outline" className="text-warning border-warning">
+                        Pending
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Invite Dialog */}
