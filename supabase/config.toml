@@ -11,3 +11,21 @@ verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = true
+
+[functions.process-transcript]
+verify_jwt = true
+
+[functions.generate-summary]
+verify_jwt = true
+
+[functions.generate-email]
+verify_jwt = true
+
+[functions.extract-action-items]
+verify_jwt = true
+
+[functions.export-user-data]
+verify_jwt = true
+
+[functions.delete-user-data]
+verify_jwt = true
