@@ -16,6 +16,7 @@ import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Team from "./pages/Team";
 import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,15 +31,15 @@ const App = () => (
           <Route path="/" element={<Marketing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-          <Route path="/calls" element={<Layout><Calls /></Layout>} />
-          <Route path="/calls/:id" element={<Layout><CallDetail /></Layout>} />
-          <Route path="/calls/:id/transcript" element={<Layout><CallTranscript /></Layout>} />
-          <Route path="/calls/:id/live" element={<CallLive />} />
-          <Route path="/frameworks" element={<Layout><Frameworks /></Layout>} />
-          <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
-          <Route path="/settings" element={<Layout><Settings /></Layout>} />
-          <Route path="/team" element={<Layout><Team /></Layout>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+          <Route path="/calls" element={<ProtectedRoute><Layout><Calls /></Layout></ProtectedRoute>} />
+          <Route path="/calls/:id" element={<ProtectedRoute><Layout><CallDetail /></Layout></ProtectedRoute>} />
+          <Route path="/calls/:id/transcript" element={<ProtectedRoute><Layout><CallTranscript /></Layout></ProtectedRoute>} />
+          <Route path="/calls/:id/live" element={<ProtectedRoute><CallLive /></ProtectedRoute>} />
+          <Route path="/frameworks" element={<ProtectedRoute><Layout><Frameworks /></Layout></ProtectedRoute>} />
+          <Route path="/integrations" element={<ProtectedRoute><Layout><Integrations /></Layout></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+          <Route path="/team" element={<ProtectedRoute><Layout><Team /></Layout></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

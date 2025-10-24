@@ -17,8 +17,8 @@ const Marketing = () => {
             </div>
             <span className="text-xl font-bold text-primary tracking-wide">ECHO</span>
           </div>
-          <Button onClick={() => navigate('/dashboard')} className="btn-accent">
-            Open App
+          <Button onClick={() => navigate('/auth')} className="btn-accent">
+            Sign In
           </Button>
         </div>
       </nav>
