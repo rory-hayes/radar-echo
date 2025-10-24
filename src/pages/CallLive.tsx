@@ -135,11 +135,55 @@ const CallLive = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full max-w-7xl mx-auto px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-            {/* Transcript Column */}
-            <Card className="card-elevated bg-white overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Next Best Questions - Prominent Cards at Top */}
+        {currentSuggestion && (
+          <div className="bg-gradient-to-br from-accent/10 to-accent/5 border-b border-accent/20 px-6 py-4">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-sm font-semibold text-accent mb-3 flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                NEXT BEST QUESTION
+              </h2>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-accent/20"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-xl font-medium text-primary leading-relaxed">
+                      {currentSuggestion.text}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      className="btn-accent"
+                      onClick={handleAskQuestion}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentSuggestion(null)}
+                      className="text-subtext hover:text-primary"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full max-w-7xl mx-auto px-6 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+              {/* Transcript Column */}
+              <Card className="card-elevated bg-white overflow-hidden flex flex-col">
               <div className="p-6 border-b border-border">
                 <h2 className="text-xl font-bold text-primary">Live Transcript</h2>
               </div>
@@ -180,10 +224,10 @@ const CallLive = () => {
               </div>
             </Card>
 
-            {/* Copilot Column */}
-            <div className="flex flex-col gap-6 overflow-y-auto">
-              {/* Framework Progress */}
-              <Card className="card-elevated bg-white p-6">
+              {/* Copilot Column */}
+              <div className="flex flex-col gap-6 overflow-y-auto">
+                {/* Framework Progress */}
+                <Card className="card-elevated bg-white p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-primary">MEDDPICC Coverage</h2>
                   <span className="text-2xl font-bold text-accent">{coverage}%</span>
@@ -222,55 +266,10 @@ const CallLive = () => {
                     );
                   })}
                 </div>
-              </Card>
+                </Card>
 
-              {/* Suggestion Card */}
-              <AnimatePresence>
-                {currentSuggestion && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                  >
-                    <Card className="card-elevated bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 p-6">
-                      <div className="flex items-start gap-3 mb-4">
-                        <Lightbulb className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <h3 className="font-bold text-primary mb-2">Next Best Question</h3>
-                          <p className="text-sm text-primary leading-relaxed">{currentSuggestion.text}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setCurrentSuggestion(null)}
-                          className="text-subtext hover:text-primary"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          className="btn-accent flex-1"
-                          onClick={handleAskQuestion}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy Question
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setCurrentSuggestion(null)}
-                          className="border-border text-primary hover:bg-muted"
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </Card>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Alerts */}
-              {transcript.length > 10 && (
+                {/* Alerts */}
+                {transcript.length > 10 && (
                 <Card className="card-elevated bg-warning/5 border-warning/20 p-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
@@ -281,8 +280,9 @@ const CallLive = () => {
                       </p>
                     </div>
                   </div>
-                </Card>
-              )}
+                  </Card>
+                )}
+              </div>
             </div>
           </div>
         </div>

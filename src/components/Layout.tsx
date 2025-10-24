@@ -13,10 +13,21 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  LogOut,
+  UserCircle,
 } from 'lucide-react';
 import { useUIStore } from '@/store/use-ui';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { motion } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 
 interface LayoutProps {
   children: ReactNode;
@@ -58,9 +69,37 @@ const Layout = ({ children }: LayoutProps) => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-subtext" />
             <Input placeholder="Search... (⌘K)" className="pl-10 bg-white border-border" />
           </div>
-          <Avatar className="w-9 h-9 cursor-pointer">
-            <AvatarFallback className="bg-accent text-accent-foreground">SC</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="w-9 h-9 cursor-pointer hover:opacity-80 transition-opacity">
+                <AvatarFallback className="bg-accent text-accent-foreground">SC</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium text-primary">Sarah Chen</p>
+                  <p className="text-xs text-subtext">sarah.chen@echo.ai</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer">
+                <UserCircle className="mr-2 h-4 w-4" />
+                <span>Profile & Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  toast({ title: 'Signed out successfully' });
+                  navigate('/');
+                }}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

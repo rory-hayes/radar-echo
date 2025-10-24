@@ -1,6 +1,17 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Check, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
@@ -59,6 +70,11 @@ const integrations = [
 ];
 
 const Integrations = () => {
+  const [configureDialogOpen, setConfigureDialogOpen] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<typeof integrations[0] | null>(null);
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
+
   const handleConnect = (integrationId: string) => {
     toast({
       title: 'Integration connected',
@@ -71,6 +87,21 @@ const Integrations = () => {
       title: 'Integration disconnected',
       description: `${integrationId} has been disconnected`,
     });
+  };
+
+  const handleConfigure = (integration: typeof integrations[0]) => {
+    setSelectedIntegration(integration);
+    setConfigureDialogOpen(true);
+  };
+
+  const handleSaveConfiguration = () => {
+    toast({
+      title: 'Configuration saved',
+      description: `${selectedIntegration?.name} has been configured successfully`,
+    });
+    setConfigureDialogOpen(false);
+    setApiKey('');
+    setApiSecret('');
   };
 
   return (
@@ -122,6 +153,7 @@ const Integrations = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1 border-border text-primary hover:bg-muted"
+                      onClick={() => handleConfigure(integration)}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Configure
@@ -158,6 +190,60 @@ const Integrations = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={configureDialogOpen} onOpenChange={setConfigureDialogOpen}>
+        <DialogContent className="bg-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-primary">
+              Configure {selectedIntegration?.name}
+            </DialogTitle>
+            <DialogDescription className="text-subtext">
+              Enter your authentication credentials to connect {selectedIntegration?.name} to Echo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="api-key" className="text-primary">
+                API Key
+              </Label>
+              <Input
+                id="api-key"
+                type="password"
+                placeholder="Enter your API key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="bg-white border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="api-secret" className="text-primary">
+                API Secret
+              </Label>
+              <Input
+                id="api-secret"
+                type="password"
+                placeholder="Enter your API secret"
+                value={apiSecret}
+                onChange={(e) => setApiSecret(e.target.value)}
+                className="bg-white border-border"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfigureDialogOpen(false)}
+              className="border-border text-primary hover:bg-muted"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveConfiguration} className="btn-accent">
+              Save Configuration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
