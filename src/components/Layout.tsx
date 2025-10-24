@@ -43,6 +43,7 @@ const Layout = ({ children }: LayoutProps) => {
     { icon: Phone, label: 'Calls', path: '/calls' },
     { icon: Layers, label: 'Frameworks', path: '/frameworks' },
     { icon: FileText, label: 'Integrations', path: '/integrations' },
+    { icon: User, label: 'Team', path: '/team' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
