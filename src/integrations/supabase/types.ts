@@ -14,6 +14,255 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_items: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          meeting_id: string
+          owner: string
+          status: Database["public"]["Enums"]["action_item_status"]
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          meeting_id: string
+          owner: string
+          status?: Database["public"]["Enums"]["action_item_status"]
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          meeting_id?: string
+          owner?: string
+          status?: Database["public"]["Enums"]["action_item_status"]
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          organization_id: string | null
+          resource_id: string | null
+          resource_type: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          organization_id?: string | null
+          resource_id?: string | null
+          resource_type: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          organization_id?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consent_logs: {
+        Row: {
+          consent_given: boolean
+          id: string
+          ip_address: string | null
+          meeting_id: string
+          metadata: Json | null
+          participant_email: string
+          timestamp: string
+        }
+        Insert: {
+          consent_given: boolean
+          id?: string
+          ip_address?: string | null
+          meeting_id: string
+          metadata?: Json | null
+          participant_email: string
+          timestamp?: string
+        }
+        Update: {
+          consent_given?: boolean
+          id?: string
+          ip_address?: string | null
+          meeting_id?: string
+          metadata?: Json | null
+          participant_email?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_logs_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extractions: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          framework_field: string
+          id: string
+          meeting_id: string
+          metadata: Json | null
+          value: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          framework_field: string
+          id?: string
+          meeting_id: string
+          metadata?: Json | null
+          value?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          framework_field?: string
+          id?: string
+          meeting_id?: string
+          metadata?: Json | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extractions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frameworks: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          fields: string[]
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          organization_id: string | null
+          questions: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          fields: string[]
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          organization_id?: string | null
+          questions: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          fields?: string[]
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          organization_id?: string | null
+          questions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frameworks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          created_at: string
+          credentials: Json
+          id: string
+          last_sync_at: string | null
+          organization_id: string
+          provider: Database["public"]["Enums"]["integration_provider"]
+          status: Database["public"]["Enums"]["integration_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credentials: Json
+          id?: string
+          last_sync_at?: string | null
+          organization_id: string
+          provider: Database["public"]["Enums"]["integration_provider"]
+          status?: Database["public"]["Enums"]["integration_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credentials?: Json
+          id?: string
+          last_sync_at?: string | null
+          organization_id?: string
+          provider?: Database["public"]["Enums"]["integration_provider"]
+          status?: Database["public"]["Enums"]["integration_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -54,6 +303,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          created_by: string
+          ended_at: string | null
+          framework_id: string | null
+          id: string
+          organization_id: string
+          participants: Json
+          recording_url: string | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["meeting_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          ended_at?: string | null
+          framework_id?: string | null
+          id?: string
+          organization_id: string
+          participants?: Json
+          recording_url?: string | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["meeting_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          ended_at?: string | null
+          framework_id?: string | null
+          id?: string
+          organization_id?: string
+          participants?: Json
+          recording_url?: string | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["meeting_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -162,6 +467,73 @@ export type Database = {
         }
         Relationships: []
       }
+      transcripts: {
+        Row: {
+          created_at: string
+          full_text: string | null
+          id: string
+          meeting_id: string
+          segments: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_text?: string | null
+          id?: string
+          meeting_id: string
+          segments?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_text?: string | null
+          id?: string
+          meeting_id?: string
+          segments?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcripts_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -178,7 +550,17 @@ export type Database = {
     }
     Enums: {
       account_type: "b2b" | "b2c"
+      action_item_status: "pending" | "in_progress" | "completed" | "cancelled"
+      app_role: "owner" | "admin" | "member"
+      integration_provider:
+        | "hubspot"
+        | "salesforce"
+        | "zoom"
+        | "google_calendar"
+        | "outlook"
+      integration_status: "active" | "inactive" | "error"
       invitation_status: "pending" | "accepted" | "expired" | "revoked"
+      meeting_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       user_role: "owner" | "admin" | "member" | "viewer"
     }
     CompositeTypes: {
@@ -308,7 +690,18 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["b2b", "b2c"],
+      action_item_status: ["pending", "in_progress", "completed", "cancelled"],
+      app_role: ["owner", "admin", "member"],
+      integration_provider: [
+        "hubspot",
+        "salesforce",
+        "zoom",
+        "google_calendar",
+        "outlook",
+      ],
+      integration_status: ["active", "inactive", "error"],
       invitation_status: ["pending", "accepted", "expired", "revoked"],
+      meeting_status: ["scheduled", "in_progress", "completed", "cancelled"],
       user_role: ["owner", "admin", "member", "viewer"],
     },
   },
