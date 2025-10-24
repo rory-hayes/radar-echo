@@ -1,8 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { mockApi } from '@/lib/mock/server';
-import { UPCOMING_MEETINGS } from '@/lib/mock/data';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +8,14 @@ import { Calendar, TrendingUp, Clock, Smile, Play, ArrowRight } from 'lucide-rea
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useDashboardData } from '@/hooks/use-dashboard-data';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { refreshSubscription } = useSubscription();
+  const { data: dashboard, isLoading } = useDashboardData();
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
@@ -24,17 +24,48 @@ const Dashboard = () => {
         title: 'Subscription activated!',
         description: 'Your payment was successful. Welcome to Echo.',
       });
-      // Remove session_id from URL
       navigate('/dashboard', { replace: true });
-      // Refresh subscription status
       setTimeout(() => refreshSubscription(), 2000);
     }
   }, [searchParams, navigate, refreshSubscription]);
 
-  const { data: dashboard } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => mockApi.getDashboard(),
-  });
+  const handleStartCall = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: orgMember } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+
+    const { data: meeting, error } = await supabase
+      .from('meetings')
+      .insert([{
+        title: 'New Discovery Call',
+        created_by: user.id,
+        organization_id: orgMember?.organization_id || '',
+        status: 'in_progress' as const,
+        participants: [],
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to create meeting', variant: 'destructive' });
+      return;
+    }
+
+    navigate(`/calls/${meeting.id}/live`);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="text-center text-subtext">Loading your dashboard...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -44,7 +75,7 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-4xl font-bold mb-2 text-primary">Welcome back, Sarah</h1>
+        <h1 className="text-4xl font-bold mb-2 text-primary">Welcome back</h1>
         <p className="text-subtext text-lg">Here's what's happening with your deals today.</p>
       </motion.div>
 
@@ -67,24 +98,33 @@ const Dashboard = () => {
               </Button>
             </div>
             <div className="space-y-4">
-              {UPCOMING_MEETINGS.map((meeting, idx) => (
-                <motion.div
-                  key={meeting.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + idx * 0.1 }}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-accent/50 hover:bg-muted/50 transition-all"
-                >
-                  <div>
-                    <h3 className="font-semibold mb-1 text-primary">{meeting.title}</h3>
-                    <p className="text-sm text-subtext">{meeting.time}</p>
-                  </div>
-                  <Button size="sm" className="btn-accent">
-                    <Play className="w-4 h-4 mr-2" />
-                    Join
+              {dashboard?.upcomingMeetings && dashboard.upcomingMeetings.length > 0 ? (
+                dashboard.upcomingMeetings.map((meeting, idx) => (
+                  <motion.div
+                    key={meeting.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + idx * 0.1 }}
+                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-accent/50 hover:bg-muted/50 transition-all"
+                  >
+                    <div>
+                      <h3 className="font-semibold mb-1 text-primary">{meeting.title}</h3>
+                      <p className="text-sm text-subtext">{new Date(meeting.created_at).toLocaleString()}</p>
+                    </div>
+                    <Button size="sm" className="btn-accent" onClick={() => navigate(`/calls/${meeting.id}/live`)}>
+                      <Play className="w-4 h-4 mr-2" />
+                      Join
+                    </Button>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-subtext">
+                  <p>No upcoming meetings</p>
+                  <Button onClick={handleStartCall} className="mt-4 btn-accent">
+                    Start Your First Call
                   </Button>
-                </motion.div>
-              ))}
+                </div>
+              )}
             </div>
           </Card>
         </motion.div>
@@ -142,11 +182,7 @@ const Dashboard = () => {
 
           <Button
             className="w-full btn-accent"
-            onClick={() => {
-              mockApi.createMeeting('New Discovery Call').then((meeting) => {
-                navigate(`/calls/${meeting.id}/live`);
-              });
-            }}
+            onClick={handleStartCall}
           >
             Start New Call
           </Button>
@@ -167,25 +203,31 @@ const Dashboard = () => {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {dashboard?.recentMeetings.map((meeting, idx) => (
-                <motion.div
-                  key={meeting.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + idx * 0.1 }}
-                  onClick={() => navigate(`/calls/${meeting.id}`)}
-                  className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-medium group-hover:text-accent transition-colors">{meeting.title}</h3>
-                    <Badge variant="outline" className="border-accent text-accent text-xs">
-                      {meeting.coverage}%
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-subtext mb-2">{meeting.rep}</p>
-                  <p className="text-xs text-subtext">{new Date(meeting.date).toLocaleDateString()}</p>
-                </motion.div>
-              ))}
+              {dashboard?.recentMeetings && dashboard.recentMeetings.length > 0 ? (
+                dashboard.recentMeetings.map((meeting, idx) => (
+                  <motion.div
+                    key={meeting.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + idx * 0.1 }}
+                    onClick={() => navigate(`/calls/${meeting.id}`)}
+                    className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-medium group-hover:text-accent transition-colors">{meeting.title}</h3>
+                      <Badge variant="outline" className="border-accent text-accent text-xs">
+                        {meeting.coverage}%
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-subtext mb-2">{meeting.rep}</p>
+                    <p className="text-xs text-subtext">{new Date(meeting.date).toLocaleDateString()}</p>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-8 text-subtext">
+                  No completed calls yet. Start your first call to see summaries here.
+                </div>
+              )}
             </div>
           </Card>
         </motion.div>

@@ -187,13 +187,7 @@ const Onboarding = () => {
       if (error) throw error;
 
       if (data.url) {
-        window.open(data.url, '_blank');
-        toast({
-          title: 'Redirecting to checkout',
-          description: 'Complete your payment to activate your subscription',
-        });
-        // Still navigate to dashboard
-        setTimeout(() => navigate('/dashboard'), 2000);
+        window.location.href = data.url;
       }
     } catch (error: any) {
       toast({

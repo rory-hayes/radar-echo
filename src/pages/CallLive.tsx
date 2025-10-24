@@ -1,94 +1,82 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockApi } from '@/lib/mock/server';
-import { startLiveSession } from '@/lib/mock/ws';
+import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Copy, X, Lightbulb, AlertCircle, Circle, Bookmark, StopCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState, useRef } from 'react';
+import { ArrowLeft, Mic, Circle, StopCircle, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { TranscriptSegment, Extraction } from '@/lib/mock/data';
+
+interface TranscriptSegment {
+  id: string;
+  speaker: string;
+  text: string;
+  timestamp: string;
+}
+
+interface Extraction {
+  field: string;
+  value: string;
+  confidence: number;
+}
 
 const CallLive = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
   const [extractions, setExtractions] = useState<Extraction[]>([]);
-  const [currentSuggestion, setCurrentSuggestion] = useState<any>(null);
-  const [isRecording, setIsRecording] = useState(true);
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
-  const stopSessionRef = useRef<(() => void) | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
 
-  const { data: call } = useQuery({
-    queryKey: ['call', id],
-    queryFn: () => mockApi.getCall(id!),
+  const { data: meeting } = useQuery({
+    queryKey: ['meeting', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('meetings')
+        .select('*')
+        .eq('id', id!)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
   });
 
   useEffect(() => {
-    if (id) {
-      const stopSession = startLiveSession({
-        meetingId: id,
-        onChunk: (segment) => {
-          setTranscript((prev) => [...prev, segment]);
-          transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        },
-        onExtraction: (field, value, confidence) => {
-          const extraction: Extraction = { field, value, confidence };
-          setExtractions((prev) => {
-            const existing = prev.findIndex((e) => e.field === field);
-            if (existing >= 0) {
-              const updated = [...prev];
-              updated[existing] = extraction;
-              return updated;
-            }
-            return [...prev, extraction];
-          });
-        },
-        onSuggestion: (suggestion) => {
-          setCurrentSuggestion(suggestion);
-        },
-      });
-
-      stopSessionRef.current = stopSession;
-
-      return () => {
-        if (stopSessionRef.current) {
-          stopSessionRef.current();
-        }
-      };
+    if (meeting?.status === 'in_progress') {
+      setIsRecording(true);
     }
-  }, [id]);
+  }, [meeting]);
 
   const coverage = extractions.length > 0
     ? Math.round((extractions.filter((e) => e.confidence > 0.5).length / 7) * 100)
     : 0;
 
-  const handleAskQuestion = () => {
-    if (currentSuggestion) {
-      navigator.clipboard.writeText(currentSuggestion.text);
-      toast({ title: 'Question copied to clipboard' });
-    }
-  };
-
   const handleEndMeeting = async () => {
     setIsRecording(false);
-    if (stopSessionRef.current) {
-      stopSessionRef.current();
+    
+    const { error } = await supabase
+      .from('meetings')
+      .update({ status: 'completed' })
+      .eq('id', id!);
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to end meeting', variant: 'destructive' });
+      return;
     }
-    await mockApi.endMeeting(id!);
-    toast({ title: 'Meeting ended', description: 'Generating summary...' });
+
+    toast({ title: 'Meeting ended', description: 'Redirecting to summary...' });
     setTimeout(() => {
       navigate(`/calls/${id}`);
     }, 1500);
   };
 
-  if (!call) {
+  if (!meeting) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <p className="text-subtext">Call not found</p>
+        <p className="text-subtext">Meeting not found</p>
       </div>
     );
   }
@@ -107,78 +95,43 @@ const CallLive = () => {
               Exit
             </Button>
             <div>
-              <h1 className="text-xl font-bold text-primary">{call.title}</h1>
+              <h1 className="text-xl font-bold text-primary">{meeting.title}</h1>
               <div className="flex items-center gap-2 text-sm text-subtext">
-                <Circle className="w-2 h-2 fill-red-500 text-red-500 animate-pulse" />
-                <span>Live Recording</span>
+                {isRecording ? (
+                  <>
+                    <Circle className="w-2 h-2 fill-red-500 text-red-500 animate-pulse" />
+                    <span>Recording</span>
+                  </>
+                ) : (
+                  <span>Ready to record</span>
+                )}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border text-primary hover:bg-muted"
-            >
-              <Bookmark className="w-4 h-4 mr-2" />
-              Bookmark
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleEndMeeting}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              <StopCircle className="w-4 h-4 mr-2" />
-              End Meeting
-            </Button>
+            {!isRecording ? (
+              <Button
+                onClick={() => setIsRecording(true)}
+                className="btn-accent"
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Start Recording
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={handleEndMeeting}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                <StopCircle className="w-4 h-4 mr-2" />
+                End Meeting
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Next Best Questions - Prominent Cards at Top */}
-        {currentSuggestion && (
-          <div className="bg-gradient-to-br from-accent/10 to-accent/5 border-b border-accent/20 px-6 py-4">
-            <div className="max-w-7xl mx-auto">
-              <h2 className="text-sm font-semibold text-accent mb-3 flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" />
-                NEXT BEST QUESTION
-              </h2>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-xl p-6 shadow-lg border border-accent/20"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-1">
-                    <p className="text-xl font-medium text-primary leading-relaxed">
-                      {currentSuggestion.text}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button
-                      size="sm"
-                      className="btn-accent"
-                      onClick={handleAskQuestion}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentSuggestion(null)}
-                      className="text-subtext hover:text-primary"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        )}
-
         <div className="flex-1 overflow-hidden">
           <div className="h-full max-w-7xl mx-auto px-6 py-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
@@ -187,40 +140,44 @@ const CallLive = () => {
               <div className="p-6 border-b border-border">
                 <h2 className="text-xl font-bold text-primary">Live Transcript</h2>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {transcript.map((segment, idx) => (
-                  <motion.div
-                    key={segment.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-start gap-3"
-                  >
-                    <div className="flex-shrink-0 w-16 text-xs text-subtext pt-1">
-                      {segment.timestamp}
+              <div className="flex-1 overflow-y-auto p-6">
+                {!isRecording ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <Mic className="w-16 h-16 mx-auto mb-4 text-subtext" />
+                      <h3 className="text-lg font-semibold text-primary mb-2">Ready to Start</h3>
+                      <p className="text-subtext">Click "Start Recording" to begin the call</p>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm text-primary">{segment.speaker}</span>
-                        {segment.tags && segment.tags.length > 0 && (
-                          <div className="flex gap-1">
-                            {segment.tags.map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="outline"
-                                className="text-xs bg-accent/10 text-accent border-accent/20"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-sm text-primary leading-relaxed">{segment.text}</p>
+                  </div>
+                ) : transcript.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <Circle className="w-8 h-8 mx-auto mb-4 fill-red-500 text-red-500 animate-pulse" />
+                      <p className="text-subtext">Listening for audio...</p>
+                      <p className="text-xs text-subtext mt-2">Real-time transcription requires integration with a transcription service</p>
                     </div>
-                  </motion.div>
-                ))}
-                <div ref={transcriptEndRef} />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {transcript.map((segment) => (
+                      <motion.div
+                        key={segment.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex items-start gap-3"
+                      >
+                        <div className="flex-shrink-0 w-16 text-xs text-subtext pt-1">
+                          {segment.timestamp}
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-semibold text-sm text-primary block mb-1">{segment.speaker}</span>
+                          <p className="text-sm text-primary leading-relaxed">{segment.text}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -268,18 +225,18 @@ const CallLive = () => {
                 </div>
                 </Card>
 
-                {/* Alerts */}
-                {transcript.length > 10 && (
-                <Card className="card-elevated bg-warning/5 border-warning/20 p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-sm text-primary mb-1">Monologue Alert</h4>
-                      <p className="text-sm text-subtext">
-                        You've been talking for 3+ minutes. Consider asking a question to engage the prospect.
-                      </p>
+                {/* Info Alert */}
+                {isRecording && (
+                  <Card className="card-elevated bg-accent/5 border-accent/20 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-sm text-primary mb-1">Real-time Transcription</h4>
+                        <p className="text-sm text-subtext">
+                          To enable live transcription, integrate with a service like AssemblyAI, Deepgram, or OpenAI Whisper.
+                        </p>
+                      </div>
                     </div>
-                  </div>
                   </Card>
                 )}
               </div>
