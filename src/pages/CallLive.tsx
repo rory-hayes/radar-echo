@@ -35,9 +35,10 @@ const CallLive = () => {
           setTranscript((prev) => [...prev, segment]);
           transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         },
-        onExtraction: (extraction) => {
+        onExtraction: (field, value, confidence) => {
+          const extraction: Extraction = { field, value, confidence };
           setExtractions((prev) => {
-            const existing = prev.findIndex((e) => e.field === extraction.field);
+            const existing = prev.findIndex((e) => e.field === field);
             if (existing >= 0) {
               const updated = [...prev];
               updated[existing] = extraction;
