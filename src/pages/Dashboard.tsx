@@ -26,8 +26,8 @@ const Dashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold mb-2">Welcome back, Sarah</h1>
-        <p className="text-subtext">Here's what's happening with your deals today.</p>
+        <h1 className="text-4xl font-bold mb-2 text-primary">Welcome back, Sarah</h1>
+        <p className="text-subtext text-lg">Here's what's happening with your deals today.</p>
       </motion.div>
 
       <div className="grid grid-cols-12 gap-6">
@@ -38,11 +38,11 @@ const Dashboard = () => {
           transition={{ delay: 0.1 }}
           className="col-span-12 lg:col-span-8"
         >
-          <Card className="card-elevated p-6">
+          <Card className="card-elevated p-6 bg-white">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-accent" />
-                <h2 className="text-xl font-semibold">Upcoming Meetings</h2>
+                <Calendar className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold text-primary">Upcoming Meetings</h2>
               </div>
               <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
                 View All
@@ -55,13 +55,13 @@ const Dashboard = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 + idx * 0.1 }}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-accent/50 hover:bg-muted/50 transition-all"
                 >
                   <div>
-                    <h3 className="font-medium mb-1">{meeting.title}</h3>
+                    <h3 className="font-semibold mb-1 text-primary">{meeting.title}</h3>
                     <p className="text-sm text-subtext">{meeting.time}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="border-accent text-accent hover:bg-accent/10">
+                  <Button size="sm" className="btn-accent">
                     <Play className="w-4 h-4 mr-2" />
                     Join
                   </Button>
@@ -78,9 +78,9 @@ const Dashboard = () => {
           transition={{ delay: 0.2 }}
           className="col-span-12 lg:col-span-4 space-y-4"
         >
-          <Card className="card-elevated p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-accent" />
+          <Card className="card-elevated p-6 bg-white">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-primary">
+              <TrendingUp className="w-5 h-5 text-primary" />
               Performance
             </h2>
             <div className="space-y-6">

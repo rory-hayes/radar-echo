@@ -8,62 +8,62 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 220 25% 10%;
-    --foreground: 210 50% 96%;
+    --background: 0 0% 100%;
+    --foreground: 220 25% 10%;
     
-    --bg: 220 35% 7%;
-    --panel: 220 30% 10%;
-    --muted: 220 25% 14%;
-    --text: 210 50% 96%;
-    --subtext: 215 20% 65%;
+    --bg: 0 0% 100%;
+    --panel: 0 0% 100%;
+    --muted: 220 13% 96%;
+    --text: 220 25% 10%;
+    --subtext: 220 9% 46%;
     
-    --card: 220 30% 10%;
-    --card-foreground: 210 50% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
     
-    --popover: 220 30% 10%;
-    --popover-foreground: 210 50% 96%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
     
-    --primary: 177 80% 46%;
-    --primary-foreground: 220 35% 7%;
+    --primary: 220 70% 20%;
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 210 100% 64%;
-    --secondary-foreground: 220 35% 7%;
+    --secondary: 220 13% 96%;
+    --secondary-foreground: 220 25% 10%;
     
-    --accent: 177 80% 46%;
-    --accent-foreground: 220 35% 7%;
+    --accent: 16 100% 57%;
+    --accent-foreground: 0 0% 100%;
     
     --accent-2: 210 100% 64%;
     
-    --destructive: 350 85% 68%;
-    --destructive-foreground: 210 50% 96%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     
     --warning: 35 100% 56%;
     --success: 158 75% 52%;
     
-    --border: 220 25% 18%;
-    --input: 220 25% 18%;
-    --ring: 177 82% 50%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 16 100% 57%;
     
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
-    --sidebar-background: 220 30% 9%;
-    --sidebar-foreground: 215 20% 65%;
-    --sidebar-primary: 177 80% 46%;
-    --sidebar-primary-foreground: 210 50% 96%;
-    --sidebar-accent: 220 25% 14%;
-    --sidebar-accent-foreground: 210 50% 96%;
-    --sidebar-border: 220 25% 16%;
-    --sidebar-ring: 177 82% 50%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 16 100% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 13% 96%;
+    --sidebar-accent-foreground: 220 25% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 16 100% 57%;
     
     /* Custom gradients */
-    --gradient-radial: radial-gradient(circle at top right, hsl(220 25% 12%), transparent 60%);
-    --gradient-panel: linear-gradient(135deg, hsl(220 30% 11%), hsl(220 30% 9%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%), hsl(0 0% 100%));
+    --gradient-panel: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 13% 98%));
     
     /* Shadows */
-    --shadow-sm: 0 2px 8px -2px hsl(220 35% 5% / 0.3);
-    --shadow-md: 0 4px 16px -4px hsl(220 35% 5% / 0.4);
-    --shadow-lg: 0 8px 32px -8px hsl(220 35% 5% / 0.5);
-    --shadow-accent: 0 0 24px -8px hsl(177 82% 50% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1);
+    --shadow-accent: 0 4px 14px 0 hsl(16 100% 57% / 0.25);
     
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -88,31 +88,39 @@ All colors MUST be HSL.
 
 @layer components {
   .card-elevated {
-    @apply bg-panel border-border rounded-xl shadow-[var(--shadow-md)] transition-all duration-200;
+    @apply bg-card border border-border rounded-lg shadow-[var(--shadow-sm)] transition-all duration-200;
   }
   
   .card-elevated:hover {
-    @apply shadow-[var(--shadow-lg)] translate-y-[-2px];
+    @apply shadow-[var(--shadow-md)];
   }
   
   .gradient-overlay {
     position: relative;
-  }
-  
-  .gradient-overlay::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--gradient-radial);
-    pointer-events: none;
-    z-index: 0;
+    background: var(--gradient-subtle);
   }
   
   .btn-accent {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90 shadow-[var(--shadow-accent)] transition-all;
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 shadow-[var(--shadow-accent)] transition-all font-medium;
   }
   
   .btn-accent:hover {
-    @apply shadow-[0_0_32px_-8px_hsl(177_82%_50%/0.4)] scale-[1.02];
+    @apply shadow-[var(--shadow-accent)] brightness-105;
+  }
+  
+  .page-header {
+    @apply border-b border-border bg-white/80 backdrop-blur-sm;
+  }
+  
+  .status-badge-error {
+    @apply bg-destructive/10 text-destructive border border-destructive/20 rounded-md px-3 py-2;
+  }
+  
+  .status-badge-success {
+    @apply bg-success/10 text-success border border-success/20 rounded-md px-3 py-2;
+  }
+  
+  .status-badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20 rounded-md px-3 py-2;
   }
 }
