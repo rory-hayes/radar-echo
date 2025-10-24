@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { mockApi } from '@/lib/mock/server';
 import { UPCOMING_MEETINGS } from '@/lib/mock/data';
@@ -9,9 +9,27 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, TrendingUp, Clock, Smile, Play, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/use-subscription';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { refreshSubscription } = useSubscription();
+
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    if (sessionId) {
+      toast({
+        title: 'Subscription activated!',
+        description: 'Your payment was successful. Welcome to Echo.',
+      });
+      // Remove session_id from URL
+      navigate('/dashboard', { replace: true });
+      // Refresh subscription status
+      setTimeout(() => refreshSubscription(), 2000);
+    }
+  }, [searchParams, navigate, refreshSubscription]);
 
   const { data: dashboard } = useQuery({
     queryKey: ['dashboard'],

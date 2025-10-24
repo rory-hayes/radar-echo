@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Building2, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Building2, User, ArrowRight, Loader2, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { STRIPE_TIERS } from '@/lib/stripe-config';
 
 const orgSchema = z.object({
   name: z.string().trim().min(2, { message: 'Organization name must be at least 2 characters' }).max(100),
@@ -17,11 +18,12 @@ const orgSchema = z.object({
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'type' | 'b2b-setup' | 'complete'>('type');
+  const [step, setStep] = useState<'type' | 'b2b-setup' | 'plan-selection' | 'complete'>('type');
   const [accountType, setAccountType] = useState<'b2b' | 'b2c' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [orgName, setOrgName] = useState('');
   const [orgSlug, setOrgSlug] = useState('');
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -49,7 +51,7 @@ const Onboarding = () => {
     setAccountType(type);
 
     if (type === 'b2c') {
-      // For B2C, complete onboarding immediately
+      // For B2C, complete onboarding and go to plan selection
       setIsLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -64,11 +66,11 @@ const Onboarding = () => {
           .eq('id', session.user.id);
 
         toast({
-          title: 'Welcome to Echo!',
-          description: 'Your personal workspace is ready.',
+          title: 'Account created!',
+          description: 'Choose a plan to get started.',
         });
 
-        navigate('/dashboard');
+        setStep('plan-selection');
       } catch (error: any) {
         toast({
           title: 'Setup failed',
@@ -139,7 +141,8 @@ const Onboarding = () => {
         description: `Welcome to ${validated.name}`,
       });
 
-      navigate('/dashboard');
+      // Move to plan selection
+      setStep('plan-selection');
     } catch (error: any) {
       if (error.errors) {
         toast({
@@ -164,6 +167,47 @@ const Onboarding = () => {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  };
+
+  const handlePlanSelection = async (tier: string) => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const tierConfig = STRIPE_TIERS[tier as keyof typeof STRIPE_TIERS];
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId: tierConfig.price_id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.url) {
+        window.open(data.url, '_blank');
+        toast({
+          title: 'Redirecting to checkout',
+          description: 'Complete your payment to activate your subscription',
+        });
+        // Still navigate to dashboard
+        setTimeout(() => navigate('/dashboard'), 2000);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Checkout failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkipPlan = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -283,6 +327,66 @@ const Onboarding = () => {
                 </Button>
               </div>
             </form>
+          </Card>
+        )}
+
+        {step === 'plan-selection' && (
+          <Card className="card-elevated bg-white p-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-primary mb-2">Choose your plan</h1>
+              <p className="text-subtext text-lg">Select the plan that fits your needs</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
+              {Object.entries(STRIPE_TIERS).map(([key, tier]) => (
+                <motion.div
+                  key={key}
+                  whileHover={{ scale: 1.02 }}
+                  className={`p-6 border-2 rounded-xl transition-all cursor-pointer ${
+                    selectedTier === key ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                  }`}
+                  onClick={() => setSelectedTier(key)}
+                >
+                  <h3 className="text-xl font-bold text-primary mb-2">{tier.name}</h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold text-accent">${tier.price}</span>
+                    <span className="text-subtext">/month</span>
+                  </div>
+                  <ul className="space-y-2 mb-6">
+                    {tier.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-subtext">
+                        <Check className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleSkipPlan}
+                className="border-border"
+              >
+                Skip for now
+              </Button>
+              <Button
+                onClick={() => selectedTier && handlePlanSelection(selectedTier)}
+                disabled={!selectedTier || isLoading}
+                className="btn-accent flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Continue to Payment'
+                )}
+              </Button>
+            </div>
           </Card>
         )}
       </motion.div>
